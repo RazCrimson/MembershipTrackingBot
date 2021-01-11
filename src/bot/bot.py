@@ -6,13 +6,14 @@ import os
 import discord
 from discord.ext import commands
 
-from src.config import Settings
+from config import Settings
+from dependencies.database import Database
 
-exclude_cogs = ['__init__.py', ]
+exclude_cogs = ['__init__.py', 'bot_checks.py']
 
 
 def _custom_prefix_adder(*args):
-    def _prefix_callable(bot, msg):
+    def _prefix_callable(bot):
         """returns a list of strings which will be used as command prefixes"""
         user_id = bot.user.id
         base = [f'<@!{user_id}> ', f'<@{user_id}> ']
@@ -29,6 +30,8 @@ class Bot(commands.AutoShardedBot):
                          description=self.configs.bot_description, pm_help=None, help_attrs=dict(hidden=True),
                          fetch_offline_members=False, heartbeat_timeout=150.0)
         self.bot_token = self.configs.bot_token
+        self.db = Database(self.configs.db_host, self.configs.db_name, self.configs.db_user, self.configs.db_password,
+                           self.configs.db_port, self.configs.min_db_conns, self.configs.max_db_conns, loop=self.loop)
 
         self.uptime: datetime.datetime = datetime.datetime.now()
 
@@ -38,13 +41,13 @@ class Bot(commands.AutoShardedBot):
                 if extension.endswith('.py') and extension not in exclude_cogs:
                     self.load_extension(f'bot.cogs.{extension[:-3]}')
             except Exception as e:
-                print(f'Failed to load cog:  {e}, type:  {type(e)}')
+                print(f'Failed to load Cog:  {e}, Type:  {type(e)}')
                 traceback.print_exc()
                 # TODO probably log it
 
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.errors.CommandInvokeError):
-            await ctx.send(f"What you are attempting to do isn't implemented by the lazy devs 😱 | error: {error}")
+            await ctx.send("The Command raised a Error.")
         elif isinstance(error, commands.DisabledCommand):
             await ctx.send('Sorry. This command is disabled and cannot be used.')
         elif isinstance(error, commands.NoPrivateMessage):
