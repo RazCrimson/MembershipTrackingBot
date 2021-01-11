@@ -1,0 +1,80 @@
+import datetime
+import sys
+import traceback
+import os
+
+import discord
+from discord.ext import commands
+
+from src.config import Settings
+
+exclude_cogs = ['__init__.py', ]
+
+
+def _custom_prefix_adder(*args):
+    def _prefix_callable(bot, msg):
+        """returns a list of strings which will be used as command prefixes"""
+        user_id = bot.user.id
+        base = [f'<@!{user_id}> ', f'<@{user_id}> ']
+        base.extend(args)
+        return base
+
+    return _prefix_callable
+
+
+class Bot(commands.AutoShardedBot):
+    def __init__(self):
+        self.configs = Settings()
+        super().__init__(command_prefix=_custom_prefix_adder(self.configs.bot_prefix),
+                         description=self.configs.bot_description, pm_help=None, help_attrs=dict(hidden=True),
+                         fetch_offline_members=False, heartbeat_timeout=150.0)
+        self.bot_token = self.configs.bot_token
+
+        self.uptime: datetime.datetime = datetime.datetime.now()
+
+        # Cogs loader
+        for extension in os.listdir('./bot/cogs'):
+            try:
+                if extension.endswith('.py') and extension not in exclude_cogs:
+                    self.load_extension(f'bot.cogs.{extension[:-3]}')
+            except Exception as e:
+                print(f'Failed to load cog:  {e}, type:  {type(e)}')
+                traceback.print_exc()
+                # TODO probably log it
+
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.errors.CommandInvokeError):
+            await ctx.send(f"What you are attempting to do isn't implemented by the lazy devs 😱 | error: {error}")
+        elif isinstance(error, commands.DisabledCommand):
+            await ctx.send('Sorry. This command is disabled and cannot be used.')
+        elif isinstance(error, commands.NoPrivateMessage):
+            await ctx.send('This command cannot be used in private messages.')
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("You are missing required arguments in the command. :frowning:")
+        elif isinstance(error, commands.CommandInvokeError):
+            original = error.original
+            if not isinstance(original, discord.HTTPException):
+                print(f'In {ctx.command.qualified_name}:', file=sys.stderr)
+                traceback.print_tb(original.__traceback__)
+                print(f'{original.__class__.__name__}: {original}', file=sys.stderr)
+        elif isinstance(error, commands.ArgumentParsingError):
+            await ctx.send(error)
+
+    async def on_ready(self):
+        if not hasattr(self, 'uptime'):
+            self.uptime = datetime.datetime.utcnow()
+
+        print(f'Ready: {self.user} (ID: {self.user.id})')
+
+    async def on_message(self, message):
+        if not message.author.bot:
+            await self.process_commands(message)
+
+    async def close(self):
+        await super().close()
+
+    def run(self):
+        try:
+            super().run(self.configs.bot_token, reconnect=True)
+        except Exception as e:
+            print(f"Startup Error: {type(e)}: {e}")
