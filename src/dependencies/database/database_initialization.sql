@@ -44,3 +44,27 @@ CREATE TABLE IF NOT EXISTS "CHANNEL_AUTH"
     constraint "CHANNEL_ID_UNIQUE"
         unique ("CHANNEL_ID")
 );
+
+/*  TABLE:  SUBSCRIPTION_LOG    */
+create table "SUBSCRIPTION_LOG"
+(
+    "SERVER_ID"          bigint   not null,
+    "USER_ID"            bigint   not null,
+    "SUBSCRIPTION_LEVEL" smallint not null,
+    "SUBSCRIBED_DATE"    date     not null,
+    "AUTHOR_ID"          bigint   not null,
+    constraint "SUBSCRIPTION_LOG_PK"
+        primary key ("SERVER_ID", "USER_ID")
+);
+
+create table "SUBSCRIPTIONS"
+(
+    "SERVER_ID"          bigint      not null,
+    "SUBSCRIPTION_LEVEL" smallint    not null,
+    "SUBSCRIPTION_NAME"  varchar(30) not null,
+    "ROLE_ID"            bigint      not null,
+    "AUTHOR_ID"          bigint      not null,
+    "DURATION"           smallint    not null,
+    constraint "SUBSCRIPTIONS_PK"
+        primary key ("SERVER_ID", "SUBSCRIPTION_LEVEL")
+);

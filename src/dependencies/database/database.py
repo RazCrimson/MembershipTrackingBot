@@ -1,4 +1,5 @@
 import asyncio
+from datetime import date
 
 import asyncpg
 
@@ -99,3 +100,52 @@ class Database:
     async def whitelist_remove(self, server_id: int, channel_id: int):
         query = 'DELETE FROM "CHANNEL_AUTH" WHERE "SERVER_ID" = $1 AND "CHANNEL_ID" = $2'
         await self.db_pool.execute(query, server_id, channel_id)
+
+    async def add_user_subscription(self, server_id: int, user_id: int, sub_level: int, subscribed_time: date,
+                                    author_id: int):
+        query = 'INSERT INTO "SUBSCRIPTION_LOG" ("SERVER_ID", "USER_ID", "SUBSCRIPTION_LEVEL", "SUBSCRIBED_DATE", ' \
+                '"AUTHOR_ID") VALUES ($1, $2, $3, $4, $5)'
+        try:
+            await self.db_pool.execute(query, server_id, user_id, sub_level, subscribed_time, author_id)
+        except asyncpg.IntegrityConstraintViolationError:
+            raise DatabaseDuplicateEntry('Duplicate Subscription!') from asyncpg.IntegrityConstraintViolationError
+
+    async def get_user_subscription(self, server_id: int, user_id: int):
+        query = 'SELECT "SUBSCRIPTION_NAME", "SUBSCRIPTION_LEVEL", "SUBSCRIBED_DATE", ' \
+                '"DURATION", "SUBSCRIPTION_LOG"."AUTHOR_ID", "ROLE_ID" ' \
+                'FROM "SUBSCRIPTION_LOG" INNER JOIN "SUBSCRIPTIONS" USING ("SERVER_ID", "SUBSCRIPTION_LEVEL") ' \
+                'WHERE "SERVER_ID" = $1 AND "USER_ID" = $2'
+        data = await self.db_pool.fetchrow(query, server_id, user_id)
+        return data
+
+    async def delete_user_subscription(self, server_id: int, user_id: int):
+        query = 'DELETE FROM "SUBSCRIPTION_LOG" WHERE "SERVER_ID" = $1 AND "USER_ID" = $2'
+        await self.db_pool.execute(query, server_id, user_id)
+
+    async def get_all_user_subscription(self,):
+        query = 'SELECT "SERVER_ID", "USER_ID","SUBSCRIPTION_NAME", "SUBSCRIPTION_LEVEL", "SUBSCRIBED_DATE", ' \
+                '"DURATION", "SUBSCRIPTION_LOG"."AUTHOR_ID", "ROLE_ID"  ' \
+                'FROM "SUBSCRIPTION_LOG" INNER JOIN "SUBSCRIPTIONS" USING ("SERVER_ID", "SUBSCRIPTION_LEVEL") '
+        data = await self.db_pool.fetch(query)
+        return data
+
+    async def add_subscription(self, server_id: int, sub_level: int, subscription_name: str, role_id: int,
+                               duration: int, author_id: int):
+        query = 'INSERT INTO "SUBSCRIPTIONS" ("SERVER_ID", "SUBSCRIPTION_LEVEL", "SUBSCRIPTION_NAME", "ROLE_ID", ' \
+                '"DURATION", "AUTHOR_ID") VALUES ($1, $2, $3, $4, $5, $6)'
+        try:
+            await self.db_pool.execute(query, server_id, sub_level, subscription_name, role_id, duration, author_id)
+        except asyncpg.IntegrityConstraintViolationError:
+            raise DatabaseDuplicateEntry('Duplicate Subscription!') from asyncpg.IntegrityConstraintViolationError
+
+    async def get_subscriptions(self, server_id: int):
+        query = 'SELECT "SERVER_ID", "SUBSCRIPTION_LEVEL", "SUBSCRIPTION_NAME", "ROLE_ID", "DURATION", "AUTHOR_ID" ' \
+                'FROM "SUBSCRIPTIONS" WHERE "SERVER_ID" = $1'
+        data = await self.db_pool.fetch(query, server_id)
+        return data
+
+    async def delete_subscription(self, server_id: int, sub_level: int):
+        query = 'DELETE FROM "SUBSCRIPTIONS" WHERE "SERVER_ID" = $1 AND "SUBSCRIPTION_LEVEL" = $2'
+        await self.db_pool.execute(query, server_id, sub_level)
+
+
