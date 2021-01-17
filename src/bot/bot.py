@@ -13,7 +13,7 @@ exclude_cogs = ['__init__.py', 'bot_checks.py']
 
 
 def _custom_prefix_adder(*args):
-    def _prefix_callable(bot):
+    def _prefix_callable(bot, msg):
         """returns a list of strings which will be used as command prefixes"""
         user_id = bot.user.id
         base = [f'<@!{user_id}> ', f'<@{user_id}> ']
