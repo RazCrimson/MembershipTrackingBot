@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS "CHANNEL_AUTH"
 );
 
 /*  TABLE:  SUBSCRIPTION_LOG    */
-create table "SUBSCRIPTION_LOG"
+CREATE TABLE IF NOT EXISTS "SUBSCRIPTION_LOG"
 (
     "SERVER_ID"          bigint   not null,
     "USER_ID"            bigint   not null,
@@ -57,7 +57,8 @@ create table "SUBSCRIPTION_LOG"
         primary key ("SERVER_ID", "USER_ID")
 );
 
-create table "SUBSCRIPTIONS"
+/*  TABLE:  SUBSCRIPTIONS    */
+CREATE TABLE IF NOT EXISTS "SUBSCRIPTIONS"
 (
     "SERVER_ID"          bigint      not null,
     "SUBSCRIPTION_LEVEL" smallint    not null,
