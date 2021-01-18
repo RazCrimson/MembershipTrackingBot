@@ -99,7 +99,7 @@ class Subscriptions(commands.Cog):
             Union[Tuple, None]:
         subscription = await self.db.get_user_subscription(server_id, user_id)
         if subscription is not None:
-            sub_name, _, sub_date, duration, author_id = subscription
+            sub_name, _, sub_date, duration, author_id, role_id = subscription
             end_date = sub_date + timedelta(days=duration)
             remaining = {'days': 0}
             if end_date > date.today():
