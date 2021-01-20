@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS "SUBSCRIPTIONS"
     "SUBSCRIPTION_NAME"  varchar(30) not null,
     "ROLE_ID"            bigint      not null,
     "AUTHOR_ID"          bigint      not null,
-    "DURATION"           smallint    not null,
+    "DURATION"           int    not null,
     constraint "SUBSCRIPTIONS_PK"
         primary key ("SERVER_ID", "SUBSCRIPTION_LEVEL")
 );
